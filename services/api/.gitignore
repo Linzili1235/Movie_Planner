@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+.venv/
+venv/
+pip-wheel-metadata/
+python-packages/
+pytest_cache/
+.coverage
+
