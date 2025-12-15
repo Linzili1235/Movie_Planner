@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   if (!parsed.success) {
     return Response.json(
-      { error: "Invalid request", detail: parsed.error.flatten() },
+      { error: "Invalid request", detail: parsed.error },
       { status: 400 }
     );
   }

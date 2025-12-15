@@ -2,27 +2,28 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+from app.db import search_movies
+
 app = FastAPI(title="CineMatch API", version="0.1.0")
 
 
 class Constraints(BaseModel):
-    # Hard constraints (filters). These should be applied deterministically.
     max_runtime: Optional[int] = None
     min_year: Optional[int] = None
     genres: List[str] = Field(default_factory=list)
 
 
 class RecommendRequest(BaseModel):
-    # User intent in natural language (e.g., "lighthearted comedy for a group").
     mood: str
     constraints: Constraints = Field(default_factory=Constraints)
 
 
 class Movie(BaseModel):
     title: str
-    year: int
+    year: Optional[int] = None
     genres: List[str]
-    runtime: int
+    runtime: Optional[int] = None
+    plot: Optional[str] = None
     explanation: str
 
 
@@ -33,30 +34,22 @@ def health():
 
 @app.post("/v1/recommendations/query", response_model=list[Movie])
 def recommend(req: RecommendRequest):
-    """
-    MVP implementation:
-    - Return a small mocked list so the frontend + BFF + backend chain works end-to-end.
-    - Later, replace this with DB retrieval + vector search + reranking.
-    """
-    base = [
+    rows = search_movies(
+        mood=req.mood,
+        max_runtime=req.constraints.max_runtime,
+        min_year=req.constraints.min_year,
+        genres=req.constraints.genres,
+        limit=10,
+    )
+
+    return [
         Movie(
-            title="The Grand Budapest Hotel",
-            year=2014,
-            genres=["Comedy"],
-            runtime=99,
-            explanation=f"Matches a '{req.mood}' vibe and is fast-paced and group-friendly.",
-        ),
-        Movie(
-            title="Knives Out",
-            year=2019,
-            genres=["Mystery", "Comedy"],
-            runtime=130,
-            explanation=f"Fits '{req.mood}' with a mix of humor and a mystery you can discuss afterward.",
-        ),
+            title=r["title"] or "Unknown",
+            year=r.get("year"),
+            genres=r.get("genres") or [],
+            runtime=r.get("runtime"),
+            plot=r.get("plot"),
+            explanation="Matched your mood using plot-based text search and applied your filters.",
+        )
+        for r in rows
     ]
-
-    # Example deterministic filter for the MVP
-    if req.constraints.max_runtime:
-        base = [m for m in base if m.runtime <= req.constraints.max_runtime]
-
-    return base

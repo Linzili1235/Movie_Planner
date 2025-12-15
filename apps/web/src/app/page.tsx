@@ -7,6 +7,7 @@ type Movie = {
   year: number;
   genres: string[];
   runtime: number;
+  plot?: string;
   explanation: string;
 };
 
@@ -73,6 +74,9 @@ export default function Page() {
               {m.genres.join(", ")}
             </div>
             <div>{m.explanation}</div>
+            {m.plot && (
+              <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{m.plot}</div>
+            )}
           </li>
         ))}
       </ul>
